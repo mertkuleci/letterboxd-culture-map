@@ -8,6 +8,20 @@ import copy
 
 st.set_page_config(page_title="Letterboxd World Cinema Dashboard | mertkuleci", layout="wide", initial_sidebar_state="collapsed")
 
+# Mobile Responsive CSS
+st.markdown("""
+    <style>
+        .main .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            max-width: 100% !important;
+        }
+        iframe {
+            max-width: 100% !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 @st.cache_data
 def load_summary():
     return pd.read_csv('data/country_summary.csv')
@@ -85,7 +99,6 @@ GEOJSON_URL = "https://raw.githubusercontent.com/python-visualization/folium/mai
 
 @st.cache_data
 def fetch_base_geojson():
-    """Fetch GeoJSON only ONCE and store in server memory to prevent mobile network lockup."""
     return requests.get(GEOJSON_URL).json()
 
 @st.cache_data
@@ -227,19 +240,17 @@ def build_pydeck_map(color_accessor, tooltip_html, custom_geojson=None):
         stroked=True,
         filled=True,
         extruded=False,
-        wireframe=True,
+        wireframe=False,  # Turned off wireframe for Mobile GPU performance
         get_fill_color=color_accessor,
-        get_line_color=[30, 30, 30, 200],
-        get_line_width=1000,
-        pickable=True,
-        auto_highlight=True,
-        highlight_color=[255, 255, 255, 120]
+        get_line_color=[30, 30, 30, 180],
+        get_line_width=800,
+        pickable=True
     )
 
     view_state = pdk.ViewState(
         latitude=20,
         longitude=0,
-        zoom=1.2,
+        zoom=1.1,
         min_zoom=1,
         max_zoom=6,
         pitch=0,
@@ -249,7 +260,7 @@ def build_pydeck_map(color_accessor, tooltip_html, custom_geojson=None):
     return pdk.Deck(
         layers=[layer],
         initial_view_state=view_state,
-        map_style=pdk.map_styles.CARTO_DARK,  # Native mobile-friendly dark style
+        map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
         tooltip={
             "html": tooltip_html,
             "style": {
