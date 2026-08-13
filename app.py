@@ -8,19 +8,12 @@ import numpy as np
 st.set_page_config(page_title="Letterboxd World Cinema Dashboard | mertkuleci", layout="wide", initial_sidebar_state="collapsed")
 
 @st.cache_data
-def load_data():
-    summary_df = pd.read_csv('data/country_summary.csv')
-    movies_df = pd.read_csv('data/processed_movies.csv')
-    return summary_df, movies_df
-
-@st.cache_data
 def load_summary():
     return pd.read_csv('data/country_summary.csv')
 
 df = load_summary()
-raw_movies_df = pd.read_csv('data/processed_movies.csv')
 
-# Calculate dynamic dataset date coverage bounds
+# Tarih aralığını özet veriden alıyoruz (Ağır CSV okumuyoruz)
 min_data_year = 1900
 max_data_year = int(df['top_movie_year'].dropna().astype(str).str.extract(r'(\d{4})')[0].max()) if 'top_movie_year' in df.columns else 2024
 
@@ -141,7 +134,7 @@ def prepare_geojson():
             else:
                 feature['properties']['nostalgia_color'] = [52, 152, 219, 180]
                 
-            # Crime scale (10%-35%: White -> Grey -> Pink -> Deep Red)
+            # Crime scale
             cr_norm = min(max((d['crime_score'] - 10.0) / 25.0, 0.0), 1.0)
             if cr_norm <= 0.25:
                 t = cr_norm / 0.25
@@ -384,7 +377,7 @@ with tab3:
                 feature['properties']['shared_count'] = str(cnt)
                 
                 if cn == selected_c:
-                    feature['properties']['reach_color'] = [255, 180, 0, 240] # Gold Focus
+                    feature['properties']['reach_color'] = [255, 180, 0, 240]
                 elif cnt > 0:
                     r_norm = min(np.log1p(cnt) / np.log1p(20000.0), 1.0)
                     feature['properties']['reach_color'] = [int(30 + 150 * r_norm), int(60 + 195 * r_norm), int(90 - 40 * r_norm), 190]
@@ -511,7 +504,7 @@ with tab9:
         feature['properties']['similarity_score'] = f"{score}%"
         
         if cn == ref_country:
-            feature['properties']['twin_color'] = [255, 180, 0, 240] # Gold Focus
+            feature['properties']['twin_color'] = [255, 180, 0, 240]
         else:
             s_norm = min(max((score - 70.0) / 30.0, 0.0), 1.0)
             if s_norm <= 0.40:
