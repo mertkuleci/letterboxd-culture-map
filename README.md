@@ -1,24 +1,3 @@
-# 🎬 Letterboxd World Cinema Dashboard
-
-An interactive, multi-index global cinema dashboard powered by **Streamlit**, **Folium**, and **Letterboxd / TMDb metadata**.
-
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://letterboxd-culture-map.streamlit.app)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-
-Created with ❤️ by **[mertkuleci](https://github.com/mertkuleci)**
-
----
-
-## 📌 Project Overview
-
-The **Letterboxd World Cinema Dashboard** provides a quantitative and visual exploration of international film preferences, release origins, regional genre capitalizations, and cultural film indexes across **100+ countries**.
-
-- 🌐 **Live Interactive App:** [letterboxd-culture-map.streamlit.app](https://letterboxd-culture-map.streamlit.app)
-- 📊 **Dataset Coverage:** Archive spanning **1900 – 2024** (Letterboxd & TMDb Metadata Snapshot)
-- 📱 **Mobile & Desktop Optimized:** Built using a 2D Leaflet rendering engine (`folium`) for 100% stability across Android, iOS, and Web browsers.
-
----
-
 ## 🗺️ Visual Map Showcase (Results)
 
 ### 1. World Favorites
@@ -34,7 +13,10 @@ The **Letterboxd World Cinema Dashboard** provides a quantitative and visual exp
 ---
 
 ### 3. Country Spotlight & Global Reach
-*Ranks a nation's top 10 films and directors (min. 3 films). Calculates shared catalog overlap ($|M_A \cap M_B|$) across 0 to 20,000+ shared titles using a logarithmic scale.*
+*Ranks a nation's top 10 films and directors (min. 3 films). Calculates shared catalog overlap across 0 to 20,000+ shared titles using a logarithmic scale:*
+
+$$\text{Shared Movies} = |M_A \cap M_B|$$
+
 ![Map 3: Global Reach](assets/map3.png)
 
 ---
@@ -46,7 +28,10 @@ The **Letterboxd World Cinema Dashboard** provides a quantitative and visual exp
 ---
 
 ### 5. Hollywood Dependence Index
-*Measures the proportion of US-produced films in each country's catalog: $\text{Hollywood Share \%} = \frac{\text{USA Movies}}{\text{Total Catalog}} \times 100$.*
+*Measures the proportion of US-produced films in each country's catalog:*
+
+$$\text{Hollywood Share} = \left( \frac{\text{USA Movies in Catalog}}{\text{Total Catalog Movies}} \right) \times 100\%$$
+
 ![Map 5: Hollywood Dependence](assets/map5.png)
 
 ---
@@ -58,19 +43,28 @@ The **Letterboxd World Cinema Dashboard** provides a quantitative and visual exp
 ---
 
 ### 7. The Sin City & Crime Index
-*Ranks countries by crime, action, thriller, and mystery focus: $\text{Crime Share \%} = \frac{\text{Crime + Action + Thriller + Mystery}}{\text{Total Genre Entries}} \times 100$.*
+*Ranks countries by crime, action, thriller, and mystery focus:*
+
+$$\text{Crime Share} = \left( \frac{\text{Crime + Action + Thriller + Mystery Entries}}{\text{Total Genre Entries}} \right) \times 100\%$$
+
 ![Map 7: Sin City Index](assets/map7.png)
 
 ---
 
 ### 8. The Darkness Index
-*Compares dark genres against lighthearted genres: $\text{Dark Ratio \%} = \frac{\text{Horror + Thriller + Crime + Mystery}}{\text{Dark Genres + Light Genres}} \times 100$.*
+*Compares dark genres against lighthearted genres:*
+
+$$\text{Dark Ratio} = \left( \frac{\text{Horror + Thriller + Crime + Mystery}}{\text{Dark Genres + Light Genres}} \right) \times 100\%$$
+
 ![Map 8: Darkness Index](assets/map8.png)
 
 ---
 
 ### 9. Cinematic Taste Twin Finder
-*Calculates Cosine Similarity between normalized genre distribution vectors ($V_A \cdot V_B / (\|V_A\| \|V_B\|)$) to locate every country's closest cinema taste twin.*
+*Calculates Cosine Similarity between normalized genre distribution vectors to locate every country's closest cinema taste twin:*
+
+$$\text{Similarity}(V_A, V_B) = \frac{V_A \cdot V_B}{\|V_A\| \cdot \|V_B\|}$$
+
 ![Map 9: Taste Twin Finder](assets/map9.png)
 
 ---
@@ -82,66 +76,17 @@ The **Letterboxd World Cinema Dashboard** provides a quantitative and visual exp
 ---
 
 ### 11. Futurism & Cyberpunk Index
-*Measures the share of Science Fiction in national catalogs: $\text{Sci-Fi Share \%} = \frac{\text{Sci-Fi Entries}}{\text{Total Genre Entries}} \times 100$.*
+*Measures the share of Science Fiction in national catalogs:*
+
+$$\text{Sci-Fi Share} = \left( \frac{\text{Science Fiction Entries}}{\text{Total Genre Entries}} \right) \times 100\%$$
+
 ![Map 11: Futurism Index](assets/map11.png)
 
 ---
 
 ### 12. The Tears & Melodrama Index
-*Calculates emotional melodrama focus: $\text{Melodrama Share \%} = \frac{\text{Romance + Drama Entries}}{\text{Total Genre Entries}} \times 100$.*
+*Calculates emotional melodrama focus:*
+
+$$\text{Melodrama Share} = \left( \frac{\text{Romance + Drama Entries}}{\text{Total Genre Entries}} \right) \times 100\%$$
+
 ![Map 12: Melodrama Index](assets/map12.png)
-
----
-
-## 🛠️ Data Pipeline & Architecture
-
-```text
-raw_datasets/ (Kaggle TMDb/Letterboxd)
-  ├── movies.csv, crew.csv, genres.csv, releases.csv
-  │
-  ▼  [data_processing.py]
-data/processed_movies.csv & data/processed_releases.csv
-  │
-  ▼  [analytics.py]
-data/country_summary.csv  (Lightweight summary file)
-  │
-  ▼  [app.py]
-Streamlit Web App + Folium Map Engine
-```
-
----
-
-## 💻 Local Installation & Setup
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/mertkuleci/letterboxd-culture-map.git](https://github.com/mertkuleci/letterboxd-culture-map.git)
-   cd letterboxd-culture-map
-   ```
-
-2. **Create and activate a virtual environment:**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   .\venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Run the Streamlit application locally:**
-   ```bash
-   streamlit run app.py
-   ```
-
----
-
-## 📄 License & Attribution
-
-- Created by **[mertkuleci](https://github.com/mertkuleci)**.
-- Data provided by **[Letterboxd](https://letterboxd.com)** & **[Kaggle TMDb Datasets](https://www.kaggle.com/datasets)**.
-- Released under the [MIT License](LICENSE).
