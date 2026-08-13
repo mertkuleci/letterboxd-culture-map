@@ -4,6 +4,7 @@ import json
 import requests
 import pydeck as pdk
 import numpy as np
+import copy
 
 st.set_page_config(page_title="Letterboxd World Cinema Dashboard | mertkuleci", layout="wide", initial_sidebar_state="collapsed")
 
@@ -13,7 +14,7 @@ def load_summary():
 
 df = load_summary()
 
-# Tarih aralığını özet veriden alıyoruz (Ağır CSV okumuyoruz)
+# Dynamic dataset coverage range
 min_data_year = 1900
 max_data_year = int(df['top_movie_year'].dropna().astype(str).str.extract(r'(\d{4})')[0].max()) if 'top_movie_year' in df.columns else 2024
 
@@ -83,8 +84,13 @@ def get_rgb_color(name):
 GEOJSON_URL = "https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/world-countries.json"
 
 @st.cache_data
+def fetch_base_geojson():
+    """Fetch GeoJSON only ONCE and store in server memory to prevent mobile network lockup."""
+    return requests.get(GEOJSON_URL).json()
+
+@st.cache_data
 def prepare_geojson():
-    res = requests.get(GEOJSON_URL).json()
+    res = copy.deepcopy(fetch_base_geojson())
     summary_dict = df.set_index('country').to_dict(orient='index')
     
     for feature in res['features']:
@@ -243,7 +249,7 @@ def build_pydeck_map(color_accessor, tooltip_html, custom_geojson=None):
     return pdk.Deck(
         layers=[layer],
         initial_view_state=view_state,
-        map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        map_style=pdk.map_styles.CARTO_DARK,  # Native mobile-friendly dark style
         tooltip={
             "html": tooltip_html,
             "style": {
@@ -367,7 +373,7 @@ with tab3:
 
             st.write("### 🌐 Global Reach Map (Graduated 0 to 20,000+ shared movie scale with " + selected_c + ")")
             
-            reach_geojson = requests.get(GEOJSON_URL).json()
+            reach_geojson = copy.deepcopy(fetch_base_geojson())
             
             for feature in reach_geojson['features']:
                 orig = feature['properties']['name']
@@ -495,7 +501,7 @@ with tab9:
             sim = 0.0
         similarity_dict[c_name] = round(sim * 100, 1)
 
-    twin_geojson = requests.get(GEOJSON_URL).json()
+    twin_geojson = copy.deepcopy(fetch_base_geojson())
     for feature in twin_geojson['features']:
         orig = feature['properties']['name']
         cn = COUNTRY_NAME_FIXES.get(orig, orig)
