@@ -7,7 +7,7 @@ import numpy as np
 import folium
 from html2image import Html2Image
 
-# Ensure assets output directory exists
+# Ensure output directory exists
 os.makedirs("assets", exist_ok=True)
 
 # Initialize html2image headless renderer
@@ -52,19 +52,6 @@ def prepare_geojson():
         if cname in summary_dict:
             d = summary_dict[cname]
             feature['properties']['top_movie'] = str(d['top_movie'])
-            feature['properties']['top_genre'] = str(d['top_genre'])
-            feature['properties']['top_genre_count'] = str(d['top_genre_count'])
-            feature['properties']['total_movies'] = str(d['total_movies'])
-            feature['properties']['ownership_status'] = "🟢 Domestic" if d['has_domestic_top_film'] else "🔴 Foreign Import"
-            feature['properties']['hollywood_pct'] = f"{d['hollywood_pct']}%"
-            feature['properties']['avg_top20_year'] = str(d['avg_top20_year'])
-            feature['properties']['crime_score'] = f"{d['crime_score']}%"
-            feature['properties']['darkness_score'] = f"{d['darkness_score']}%"
-            feature['properties']['slow_cinema_pct'] = f"{d['slow_cinema_pct']}%"
-            feature['properties']['futurism_score'] = f"{d['futurism_score']}%"
-            feature['properties']['melodrama_score'] = f"{d['melodrama_score']}%"
-            feature['properties']['avg_runtime'] = f"{d['avg_runtime']} mins"
-            
             feature['properties']['movie_color'] = get_hex_color(str(d['top_movie']))
             feature['properties']['domestic_color'] = "#2ecc71" if d['has_domestic_top_film'] else "#e74c3c"
             feature['properties']['genre_color'] = GENRE_HEX.get(d['top_genre'], "#95a5a6")
@@ -97,8 +84,110 @@ def prepare_geojson():
 
 geojson_data = prepare_geojson()
 
+def build_legend_html(title, items_or_gradient):
+    """Generate floating dark-mode legend overlay box for Folium maps."""
+    body_content = ""
+    
+    if isinstance(items_or_gradient, list):
+        # List of items: [("Label", "#color_hex"), ...]
+        items_html = "".join([
+            f"<div style='display:flex; align-items:center; margin-bottom:4px;'>"
+            f"<span style='background:{color}; display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px;'></span>"
+            f"<span>{label}</span></div>"
+            for label, color in items_or_gradient
+        ])
+        body_content = items_html
+    elif isinstance(items_or_gradient, dict):
+        # Gradient bar specs: {'min': '0%', 'max': '100%', 'colors': 'linear-gradient(...)', 'mid': '50%'}
+        g = items_or_gradient
+        mid_label = f"<span>{g['mid']}</span>" if 'mid' in g else ""
+        body_content = f"""
+        <div style="margin-top: 6px;">
+            <div style="height: 12px; border-radius: 4px; background: {g['colors']}; margin-bottom: 4px;"></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #bbbbbb;">
+                <span>{g['min']}</span>
+                {mid_label}
+                <span>{g['max']}</span>
+            </div>
+        </div>
+        """
+
+    return f"""
+    <div style="
+        position: fixed; 
+        bottom: 30px; 
+        left: 30px; 
+        z-index: 9999; 
+        background-color: rgba(20, 24, 28, 0.92); 
+        color: #ffffff; 
+        padding: 10px 14px; 
+        border-radius: 8px; 
+        border: 1px solid #444444; 
+        font-family: sans-serif; 
+        font-size: 11px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        max-width: 280px;
+    ">
+        <b style="font-size: 12px; color: #ffb400; display: block; margin-bottom: 6px;">{title}</b>
+        {body_content}
+    </div>
+    """
+
+def get_map_legend(map_num):
+    if map_num == 1:
+        # Top movies across nations
+        top_movies = df['top_movie'].value_counts().head(6).index.tolist()
+        items = [(m[:22] + "..." if len(m) > 22 else m, get_hex_color(m)) for m in top_movies]
+        items.append(("Other Films", "#95a5a6"))
+        return build_legend_html("🏆 Top Film Color Legend", items)
+    
+    elif map_num == 2:
+        items = [("Domestic / Co-Production", "#2ecc71"), ("Foreign Import", "#e74c3c")]
+        return build_legend_html("🟢 Origin Status", items)
+    
+    elif map_num == 3:
+        g = {'min': '0 Shared', 'mid': '100', 'max': '20,000+ Shared', 'colors': 'linear-gradient(to right, #1e3c5a, #2ecc71, #f1c40f)'}
+        return build_legend_html("🌐 Shared Movie Catalog Scale", g)
+    
+    elif map_num == 4:
+        items = [(g, c) for g, c in GENRE_HEX.items()]
+        return build_legend_html("🎭 Dominant Genre", items)
+    
+    elif map_num == 5:
+        g = {'min': '0% (Sovereign)', 'mid': '50%', 'max': '100% (US Dominated)', 'colors': 'linear-gradient(to right, #2ecc71, #f1c40f, #e74c3c)'}
+        return build_legend_html("🇺🇸 Hollywood Share %", g)
+    
+    elif map_num == 6:
+        items = [("Pre-1985 (Classic Era)", "#8e44ad"), ("1985–2005 (Balanced)", "#3498db"), ("Post-2005 (Modern Era)", "#f1c40f")]
+        return build_legend_html("🕰️ Avg Top 20 Film Era", items)
+    
+    elif map_num == 7:
+        g = {'min': '10% (Low Crime)', 'mid': '22%', 'max': '35%+ (High Crime)', 'colors': 'linear-gradient(to right, #f0f0f5, #b4b4be, #e67e22, #e74c3c)'}
+        return build_legend_html("🚨 Crime/Action Share %", g)
+    
+    elif map_num == 8:
+        g = {'min': '0% (Lighthearted)', 'mid': '50%', 'max': '100% (Dark / Horror)', 'colors': 'linear-gradient(to right, #f1c40f, #e67e22, #8e44ad)'}
+        return build_legend_html("💀 Dark Genre Ratio %", g)
+    
+    elif map_num == 9:
+        g = {'min': '70% (Low Match)', 'mid': '85%', 'max': '100% (Taste Twin)', 'colors': 'linear-gradient(to right, #f5f5f5, #8c8c8c, #2ecc71)'}
+        return build_legend_html("🎯 Taste Similarity %", g)
+    
+    elif map_num == 10:
+        items = [("≤ 92 mins (Fast-Paced)", "#c8d7e6"), ("93–115 mins (Standard)", "#4169e1"), ("116+ mins (Slow Cinema Epic)", "#8a2be2")]
+        return build_legend_html("⏳ Avg Movie Runtime", items)
+    
+    elif map_num == 11:
+        g = {'min': '0% (No Sci-Fi)', 'mid': '3.0%', 'max': '6.5%+ (Cyberpunk Focus)', 'colors': 'linear-gradient(to right, #23262d, #1e90ff, #00f0f0)'}
+        return build_legend_html("🛸 Sci-Fi Share %", g)
+    
+    elif map_num == 12:
+        g = {'min': '15% (Low)', 'mid': '25%', 'max': '35%+ (High Romance/Drama)', 'colors': 'linear-gradient(to right, #ffffff, #ffb6c1, #e74c3c)'}
+        return build_legend_html("💔 Romance & Drama Share %", g)
+
 def save_map_screenshot(color_prop, map_num):
     m = folium.Map(location=[20, 0], zoom_start=1.8, tiles="cartodbdarkmatter", no_wrap=True)
+    
     folium.GeoJson(
         geojson_data,
         style_function=lambda f: {
@@ -109,6 +198,10 @@ def save_map_screenshot(color_prop, map_num):
         }
     ).add_to(m)
     
+    # Inject legend HTML overlay
+    legend_code = get_map_legend(map_num)
+    m.get_root().html.add_child(folium.Element(legend_code))
+    
     html_path = f"assets/map{map_num}.html"
     png_filename = f"map{map_num}.png"
     m.save(html_path)
@@ -117,9 +210,9 @@ def save_map_screenshot(color_prop, map_num):
     with open(html_path, 'r', encoding='utf-8') as f:
         html_content = f.read()
     hti.screenshot(html_str=html_content, save_as=png_filename)
-    print(f"✅ Generated assets/map{map_num}.png")
+    print(f"✅ Generated assets/map{map_num}.png with custom legend")
 
-print("Generating map screenshots for README...")
+print("Generating map screenshots with dark-mode legends for README...")
 map_props = [
     'movie_color', 'domestic_color', 'movie_color', 'genre_color',
     'hollywood_color', 'nostalgia_color', 'crime_color', 'darkness_color',
@@ -129,4 +222,4 @@ map_props = [
 for idx, prop in enumerate(map_props, start=1):
     save_map_screenshot(prop, idx)
 
-print("🎉 All 12 screenshots successfully saved in the assets/ directory!")
+print("🎉 All 12 screenshots with legends successfully saved in the assets/ directory!")
