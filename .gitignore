@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+data/movies.csv
+data/crew.csv
+data/genres.csv
+data/posters.csv
+data/releases.csv
+data/themes.csv
+data/countries.csv
+data/processed_movies.csv
+data/processed_releases.csv
